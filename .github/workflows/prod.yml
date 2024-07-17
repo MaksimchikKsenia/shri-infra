@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_version:
-        description: 'Release version'
+        description: "Release version"
         required: true
 
 jobs:
@@ -12,15 +12,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Verify Docker image exists
+      - name: Login to Yandex Container Registry
+        run: echo ${{ secrets.YANDEX_OAUTH_TOKEN }} | docker login --username oauth --password-stdin cr.yandex
+
+      - name: Check if Docker image exists in Container Registry
         run: |
-          docker manifest inspect cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/app:${{ github.event.inputs.release_version }}_latest || exit 1
-        env:
-          DOCKER_BUILDKIT: 1
-          DOCKER_CLI_EXPERIMENTAL: enabled
+          if docker pull cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/app:${{ github.event.inputs.release_version }}_latest; then
+            echo "Docker image cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/app:${{ github.event.inputs.release_version }}_latest found."
+          else
+            echo "Error: Docker image cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/app:${{ github.event.inputs.release_version }}_latest not found."
+            exit 1
+          fi
 
       - name: Install SSH client
         run: sudo apt-get install openssh-client
