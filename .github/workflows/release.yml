@@ -3,9 +3,6 @@ name: Release Flow
 on:
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   run-linter:
     runs-on: ubuntu-latest
