@@ -1,4 +1,4 @@
-name : Prod Flow
+name: Prod Flow
 
 on:
   workflow_dispatch:
@@ -6,7 +6,6 @@ on:
       release_version:
         description: 'Release version'
         required: true
-
 
 jobs:
   release:
@@ -22,7 +21,8 @@ jobs:
         env:
           DOCKER_BUILDKIT: 1
           DOCKER_CLI_EXPERIMENTAL: enabled
-       - name: Install SSH client
+
+      - name: Install SSH client
         run: sudo apt-get install openssh-client
 
       - name: Deploy Docker image on VM
