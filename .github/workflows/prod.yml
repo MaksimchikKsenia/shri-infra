@@ -27,20 +27,11 @@ jobs:
             exit 1
           fi
 
-      - name: Install SSH client
-        run: sudo apt-get install openssh-client
-
-      - name: Start SSH Agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Deploy Docker image on VM
+      - name: Set up SSH
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_SERVER_USERNAME }}@${{ secrets.PRODUCTION_SERVER_HOST }} << 'EOF'
-            set -e
-            docker pull cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/app:${{ github.event.inputs.release_version }}_latest
-            docker stop shri-infra || true
-            docker rm shri-infra || true
-            docker run -d --name shri-infra -p 3000:3000 cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/app:${{ github.event.inputs.release_version }}_latest
-          EOF
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > private_key
+          chmod 600 private_key
+
+      - name: Run Docker image on VM
+        run: |
+          ssh -i private_key -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_SERVER_USERNAME }}@${{ secrets.PRODUCTION_SERVER_HOST }} "docker pull cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/app:${{ github.event.inputs.release_version }}_latest && docker run -p 3000:3000 shri-infra"
