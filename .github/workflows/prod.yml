@@ -4,16 +4,20 @@ on:
   workflow_dispatch:
     inputs:
       release_version:
-        description: "Release version"
+        description: 'Release version to deploy'
         required: true
 
 jobs:
   release-to-prod:
     runs-on: ubuntu-latest
-
     steps:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Login to Yandex Container Registry
         run: echo ${{ secrets.YANDEX_OAUTH_TOKEN }} | docker login --username oauth --password-stdin cr.yandex
@@ -79,6 +83,7 @@ jobs:
               }
             });
 
+            // Находим номер нужного issue по заголовку
             const issue = issues.data.find(issue => issue.title.startsWith(`Release ${releaseVersion}`));
             let issueNumber;
             if (issue) {
@@ -86,13 +91,15 @@ jobs:
             } else {
               throw new Error(`Issue with title starting with "Release ${releaseVersion}" not found`);
             }
+
+
+            // Создаем комментарий
             await github.rest.issues.createComment({
-              owner: 'StepanTokt',
-              repo: 'shri-infra-homework',
+              owner: 'MaksimchikKsenia',
+              repo: 'shri-infra',
               issue_number: issueNumber,
               body: `### Release Fix Information
               - **Date**: ${process.env.CURRENT_DATE}
-              - **Author**: Stepan Tokt
+              - **Author**: Maksimchik Ksenia
               - **Message**: Релиз выкачен в прод`
             });
-
