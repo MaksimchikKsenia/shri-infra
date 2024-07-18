@@ -27,16 +27,9 @@ jobs:
             exit 1
           fi
 
-      - name: Deploy Docker image to production
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.PRODUCTION_SERVER_HOST }}
-          username: ${{ secrets.PRODUCTION_SERVER_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          script: |
-            docker login --username MaksimchikKsenia --password ${{ secrets.GITHUB_TOKEN }} && \
-            docker pull cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/app:${{ github.event.inputs.release_version }}_latest && \
-            docker stop shri-infra || true && \
-            docker rm shri-infra || true && \
-            docker run -d --name shri-infra -p 3000:3000 cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/app:${{ github.event.inputs.release_version }}_latest
+       - name: SSH into VM and deploy Docker image
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_SERVER_HOST }} '
+            docker pull cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/ubuntu:hello
+            docker run -d --name shri-infra cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/ubuntu:hello
+          '
