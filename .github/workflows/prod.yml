@@ -27,7 +27,7 @@ jobs:
             exit 1
           fi
 
-       - name: SSH into VM and deploy Docker image
+      - name: SSH into VM and deploy Docker image
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.PRODUCTION_SERVER_HOST }} '
             docker pull cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/ubuntu:hello
