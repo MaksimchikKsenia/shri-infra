@@ -20,10 +20,10 @@ jobs:
 
       - name: Check if Docker image exists in Container Registry
         run: |
-          if docker pull cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/app:${{ github.event.inputs.release_version }}_latest; then
-            echo "Docker image cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/app:${{ github.event.inputs.release_version }}_latest found."
+          if docker pull cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/shri-infra:${{ github.event.inputs.release_version }}_latest; then
+            echo "Docker image cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/shri-infra:${{ github.event.inputs.release_version }}_latest found."
           else
-            echo "Error: Docker image cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/app:${{ github.event.inputs.release_version }}_latest not found."
+            echo "Error: Docker image cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/shri-infra:${{ github.event.inputs.release_version }}_latest not found."
             exit 1
           fi
 
@@ -71,8 +71,8 @@ jobs:
           script: |
             const releaseVersion = "${{ github.event.inputs.release_version }}";
             const issues = await github.rest.issues.listForRepo({
-              owner: 'StepanTokt',
-              repo: 'shri-infra-homework',
+              owner: 'MaksimchikKsenia',
+              repo: 'shri-infra',
               state: 'open',
               headers: {
                 'X-GitHub-Api-Version': '2022-11-28'
