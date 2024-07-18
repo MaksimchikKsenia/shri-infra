@@ -8,7 +8,7 @@ on:
         required: true
 
 jobs:
-  release:
+  release-to-prod:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,9 +27,72 @@ jobs:
             exit 1
           fi
 
-      - name: SSH into VM and deploy Docker image
+      - name: Deploy Docker image to VM
         run: |
-          ssh -o StrictHostKeyChecking=no ${{secrets.VIR_NAME}}@${{ secrets.PRODUCTION_SERVER_HOST }} '
-            docker pull cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/ubuntu:hello
-            docker run -d --name shri-infra cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/ubuntu:hello
-          '
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VIR_NAME }}@${{ secrets.PRODUCTION_SERVER_HOST }}
+          docker pull cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/shri-infra:${{ github.event.inputs.release_version }}_latest
+          docker stop shri-infra || true
+          docker rm shri-infra || true
+          docker run -d --name shri-infra -p 3000:3000 cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/shri-infra:${{ github.event.inputs.release_version }}_latest
+          echo "Docker container shri-infra started."
+          echo "Checking container status:"
+          docker ps -a --filter "name=shri-infra" --format "table {{.ID}}\t{{.Names}}\t{{.Status}}"
+          
+  add-comment-to-issue:
+    needs: [release-to-prod]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get previous release tag
+        id: get-previous-tag
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ || echo "No previous tag")
+          echo "PREV_TAG=$PREV_TAG" >> $GITHUB_ENV
+
+      - name: Get list of commits
+        id: get-commits
+        run: |
+          if [ "${{ env.PREV_TAG }}" != "No previous tag" ]; then
+            COMMITS=$(git log --pretty=format:"%h - %s" ${{ env.PREV_TAG }}..HEAD)
+          else
+            COMMITS=$(git log --pretty=format:"%h - %s" HEAD)
+          fi
+          echo "COMMITS=$COMMITS" >> $GITHUB_ENV
+
+      - name: Set current date
+        run: echo "CURRENT_DATE=$(date +%Y-%m-%d)" >> $GITHUB_ENV
+
+      - name: Create GitHub Issue comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const releaseVersion = "${{ github.event.inputs.release_version }}";
+            const issues = await github.rest.issues.listForRepo({
+              owner: 'StepanTokt',
+              repo: 'shri-infra-homework',
+              state: 'open',
+              headers: {
+                'X-GitHub-Api-Version': '2022-11-28'
+              }
+            });
+
+            const issue = issues.data.find(issue => issue.title.startsWith(`Release ${releaseVersion}`));
+            let issueNumber;
+            if (issue) {
+              issueNumber = issue.number;
+            } else {
+              throw new Error(`Issue with title starting with "Release ${releaseVersion}" not found`);
+            }
+            await github.rest.issues.createComment({
+              owner: 'StepanTokt',
+              repo: 'shri-infra-homework',
+              issue_number: issueNumber,
+              body: `### Release Fix Information
+              - **Date**: ${process.env.CURRENT_DATE}
+              - **Author**: Stepan Tokt
+              - **Message**: Релиз выкачен в прод`
+            });
+
