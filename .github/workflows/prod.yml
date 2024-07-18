@@ -98,7 +98,7 @@ jobs:
               owner: 'MaksimchikKsenia',
               repo: 'shri-infra',
               issue_number: issueNumber,
-              body: `### Release Fix Information
+              body: `### Prod Information
               - **Date**: ${process.env.CURRENT_DATE}
               - **Author**: Maksimchik Ksenia
               - **Message**: Релиз выкачен в прод`
