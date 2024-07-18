@@ -118,7 +118,8 @@ jobs:
                 'X-GitHub-Api-Version': '2022-11-28'
               }
             });
-           
+
+            // Найти issue по заголовку
             const issue = issues.data.find(issue => issue.title.startsWith(`Release ${releaseVersion}`));
             let issueNumber;
             if (issue) {
@@ -127,13 +128,14 @@ jobs:
               throw new Error(`Issue with title starting with "Release ${releaseVersion}" not found`);
             }
 
+            // Комментарий
             await github.rest.issues.createComment({
               owner: 'MaksimchikKsenia',
               repo: 'shri-infra',
               issue_number: issueNumber,
               body: `### Release Fix Information
               - **Date**: ${process.env.CURRENT_DATE}
-              - **Author**: "kseniii"
+              - **Author**: "Maksimchik Ksenia"
               - **Commits**:
               ${process.env.COMMITS}
               - **Docker image**: cr.yandex/${{ secrets.YANDEX_CONTAINER_REGISTRY_ID }}/shri-infra:${{ github.event.inputs.release_version }}_fix${{ github.run_number }}`
